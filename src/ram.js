@@ -11,8 +11,10 @@ class RAM {
      * Write (store) MDR value at address MAR
      */
     write(MAR, MDR) {
-        // !!! IMPLEMENT ME
+        // !!! IMPLEMENT ME - check
         // write the value in the MDR to the address MAR
+        // Use to store the value MDR into the address
+        this.mem[MAR] = MDR;
     }
 
     /**
@@ -21,8 +23,9 @@ class RAM {
      * @returns MDR
      */
     read(MAR) {
-        // !!! IMPLEMENT ME
+        // !!! IMPLEMENT ME - checkish
         // Read the value in address MAR and return it
+        return this.mem[MAR];
     }
 }
 

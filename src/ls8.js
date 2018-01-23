@@ -14,20 +14,26 @@ function processFile(content, cpu, onComplete) {
     const lines = content.split('\n');
 
     // Loop through each line of machine code
-
     for (let line of lines) {
-
-        // !!! IMPLEMENT ME
-
-        // Strip comments
-
-        // Remove whitespace from either end of the line
-
         // Ignore empty lines
-
+        // Strip comments
+        const commentIndex = line.indexOf('#');
+        
+        if (commentIndex != -1) {
+            line = line.substr(0, commentIndex);
+        }
+        // Remove whitespace from either end of the line
+        line = line.trim();
+        
+        if (line.length === 0) {
+            continue;
+        }
+        
         // Convert from binary string to numeric value
-
+        const val = parseInt(line, 2);
+        
         // Store in the CPU with the .poke() function
+        cpu.poke(curAddr, val);
 
         // And on to the next one
         curAddr++;
