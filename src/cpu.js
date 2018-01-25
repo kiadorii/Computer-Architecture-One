@@ -12,6 +12,8 @@ const LDI = 0b00000100; // Load Register Immediate
 const MUL = 0b00000101; // Multiply Register Register
 // PRN
 const PRN = 0b00000110; // Print (also 6 in binary)
+const PUSH = 0b00001010; // Push
+const POP = 0b00001011; // Pop
 
 const IS = 6;
 const IM = 5;
@@ -29,6 +31,8 @@ class CPU {
 
         this.reg = new Array(8).fill(0); // General-purpose registers -- registers R0 - R7
         
+        this.reg[7] = 0xF8; // Initializing SP
+
         // Special-purpose registers
         this.reg.PC = 0; // Program Counter
         this.reg.IR = 0; // Instruction Register
@@ -43,13 +47,14 @@ class CPU {
 		let bt = {};
 
         bt[HLT] = this.HLT;
-        // !!! IMPLEMENT ME -- check
         // LDI
         bt[LDI] = this.LDI;
         // MUL
         bt[MUL] = this.MUL;
         // PRN
         bt[PRN] = this.PRN;
+        bt[PUSH] = this.PUSH;
+        bt[POP] = this.POP;
 
 		this.branchTable = bt;
 	}
@@ -167,7 +172,6 @@ class CPU {
      * MUL R,R
      */
     MUL() {
-        // !!! IMPLEMENT ME
         // need to define regA & move the PC
         const regA = this.ram.read(this.reg.PC + 1);
         const regB = this.ram.read(this.reg.PC + 2);
@@ -181,7 +185,6 @@ class CPU {
      * PRN R
      */
     PRN() {
-        // !!! IMPLEMENT ME
         const regA = this.ram.read(this.reg.PC + 1);
         console.log(this.reg[regA]);
         this.reg.PC += 2;
@@ -194,6 +197,33 @@ class CPU {
         this.ram.write(this.reg[regA], this.reg[regB]);
 
         this.reg.PC += 3;
+    }
+
+    /**
+     * PUSH R
+     */
+    PUSH() {
+        const regA = this.ram.read(this.reg.PC + 1);
+        this.reg[7--]; // dec R7
+
+        // Write value in given register to SP
+        this.ram.write(this.reg[7], this.reg[regA]);
+
+        this.reg.PC += 2;
+    }
+
+    /**
+     * POP
+     */
+    POP() {
+        const regA = this.ram.read(this.reg.PC + 1);
+        const stackVal = this.ram.read(this.reg[7]);
+
+        this.reg[regA] = stackVal;
+
+        this.reg[7]++;
+
+        this.reg.PC += 2;
     }
 }
 
