@@ -14,6 +14,9 @@ const MUL = 0b00000101; // Multiply Register Register
 const PRN = 0b00000110; // Print (also 6 in binary)
 const PUSH = 0b00001010; // Push
 const POP = 0b00001011; // Pop
+const CALL = 0b00001111; // Call
+const RET = 0b00010000; // Return
+const JMP = 0b00010001; // Jump
 
 const IS = 6;
 const IM = 5;
@@ -55,6 +58,9 @@ class CPU {
         bt[PRN] = this.PRN;
         bt[PUSH] = this.PUSH;
         bt[POP] = this.POP;
+        bt[CALL] = this.CALL;
+        bt[RET] = this.RET;
+        bt[JMP] = this.JMP;
 
 		this.branchTable = bt;
 	}
@@ -224,6 +230,32 @@ class CPU {
         this.reg[7]++;
 
         this.reg.PC += 2;
+    }
+
+    /**
+     * CALL R
+     */
+    CALL() {
+        const regA = this.ram.read(this.reg.PC + 1);
+
+        this.reg[7]--;
+        this.ram.write(this.reg[7], this.reg.PC + 3);
+
+        this.reg.PC = this.reg[regA];
+    }
+
+    /**
+     * RET
+     */
+    RET() {
+
+    }
+
+    /**
+     * JMP
+     */
+    JMP() {
+
     }
 }
 
