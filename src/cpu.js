@@ -13,6 +13,9 @@ const MUL = 0b00000101; // Multiply Register Register
 // PRN
 const PRN = 0b00000110; // Print (also 6 in binary)
 
+const IS = 6;
+const IM = 5;
+
 /**
  * Class for simulating a simple Computer (CPU & memory)
  */
@@ -100,6 +103,17 @@ class CPU {
      */
     tick() {
         // !!! IMPLEMENT ME
+        // Checking if an interrupt occured
+        const maskedInterrupts = this.reg[IS] & this.reg[IM];
+
+        if (maskedInterrupts !== 0) {
+            for (let i = 0; i <= 7; i++) {
+                if (((maskedInterrupts >> i) & 1) === 1) {
+                    console.log('interrupted');
+                }
+            }
+            this.reg[IS] = 0;
+        }
 
         // Load the instruction register from the current PC
         // ^-- Assign into the instruction register from the memory address that the pc points to.
@@ -115,7 +129,7 @@ class CPU {
         // Check that the handler is defined, halt if not (invalid
         // instruction)
         if (!handler) {
-            console.error(`Invalid instruction at address ${this.reg.PC}: ${this.reg.IR}`);
+            console.error(`Invalid instruction at address ${this.reg.PC}: ${this.reg.IR.toString(2)}`);
 
             // Will halt and quit
             this.stopClock(); // stops the interval OR can call HLT()
@@ -134,7 +148,6 @@ class CPU {
      * Halt the CPU and exit the emulator
      */
     HLT() {
-        // !!! IMPLEMENT ME - check
         this.stopClock();
     }
 
@@ -142,7 +155,12 @@ class CPU {
      * LDI R,I
      */
     LDI() {
-        // !!! IMPLEMENT ME
+        const regA = this.ram.read(this.reg.PC + 1);
+        const val = this.ram.read(this.reg.PC + 2);
+
+        this.reg[regA] = val;
+        this.reg.PC += 3;
+
     }
 
     /**
@@ -151,7 +169,12 @@ class CPU {
     MUL() {
         // !!! IMPLEMENT ME
         // need to define regA & move the PC
+        const regA = this.ram.read(this.reg.PC + 1);
+        const regB = this.ram.read(this.reg.PC + 2);
+
         this.alu('MUL', regA, regB);
+
+        this.reg.PC += 3;
     }
 
     /**
@@ -159,6 +182,18 @@ class CPU {
      */
     PRN() {
         // !!! IMPLEMENT ME
+        const regA = this.ram.read(this.reg.PC + 1);
+        console.log(this.reg[regA]);
+        this.reg.PC += 2;
+    }
+
+    ST() {
+        const regA = this.ram.read(this.reg.PC + 1);
+        const regB = this.ram.read(this.read.PC + 2);
+
+        this.ram.write(this.reg[regA], this.reg[regB]);
+
+        this.reg.PC += 3;
     }
 }
 
