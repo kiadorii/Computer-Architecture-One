@@ -1,3 +1,5 @@
+import { setInterval, clearInterval } from 'timers';
+
 /**
  * LS-8 v2.0 emulator skeleton code
  */
@@ -36,9 +38,13 @@ class CPU {
         
         this.reg[7] = 0xF8; // Initializing SP
 
-        // Special-purpose registers
-        this.reg.PC = 0; // Program Counter
+            // Special-purpose registers
+            this.reg.PC = 0; // Program Counter
         this.reg.IR = 0; // Instruction Register
+
+        this.flags = {
+            interruptsEnabled: true
+        };
 
 		this.setupBranchTable();
     }
@@ -81,6 +87,10 @@ class CPU {
         this.clock = setInterval(() => {
             _this.tick();
         }, 1);
+
+        this.timerHandle = setInterval(() => {
+            this.reg[IS] !== 0b00000001;
+        }, 1000);
     }
 
     /**
@@ -88,6 +98,7 @@ class CPU {
      */
     stopClock() {
         clearInterval(this.clock);
+        clearInterval(this.timerHandle);
     }
 
     /**
@@ -106,6 +117,9 @@ class CPU {
                 // We want to execute value_in_regA = valA * valB
                 this.reg[regA] = (valA * valB) & 255; // or & 0b11111111
                 break;
+            case 'ADD':
+                this.reg[regA] = (valA + valB) & 255;
+                break;
         }
     }
 
@@ -117,13 +131,36 @@ class CPU {
         // Checking if an interrupt occured
         const maskedInterrupts = this.reg[IS] & this.reg[IM];
 
-        if (maskedInterrupts !== 0) {
+        if (this.flags.interruptsEnabled && maskedInterrupts !== 0) {
             for (let i = 0; i <= 7; i++) {
                 if (((maskedInterrupts >> i) & 1) === 1) {
-                    console.log('interrupted');
+                    // Disabling interrupts
+                    this.flags.interruptsEnabled = false;
+                    
+                    // Clearing the ith bit in the IS
+                    this.reg[IS] &= ~(1 << i);
+
+                    // Push PC onto Stack
+                    this.reg[7]--;
+                    this.ram.write(this.reg[7], this.reg.PC);
+
+                    // Push remaining register on Stack
+                    for (let j = 0; j <= 7; j++) {
+                        this.reg[7]--;
+                        this.ram.write(this.reg[7], this.reg[i]);
+                    }
+
+                    // Looking up address in the interrupt handler
+                    const vectorTableEntry = 0xf8 + i;
+                    const handlerAddress = this.ram.read(vectorTableEntry);
+
+                    // Set PC to handler address
+                    this.reg.PC = handlerAddress;
+                    
+                    // console.log(`handling interrupted! ${i}`);
+                    break;
                 }
             }
-            this.reg[IS] = 0;
         }
 
         // Load the instruction register from the current PC
@@ -196,6 +233,15 @@ class CPU {
         this.reg.PC += 2;
     }
 
+    ADD() {
+        const regA = this.ram.read(this.reg.PC + 1);
+        const regB = this.ram.read(this.reg.PC + 2);
+
+        this.alu('ADD', regA, regB);
+
+        this.reg.PC += 3;
+    }
+
     ST() {
         const regA = this.ram.read(this.reg.PC + 1);
         const regB = this.ram.read(this.read.PC + 2);
@@ -239,7 +285,7 @@ class CPU {
         const regA = this.ram.read(this.reg.PC + 1);
 
         this.reg[7]--;
-        this.ram.write(this.reg[7], this.reg.PC + 3);
+        this.ram.write(this.reg[7], this.reg.PC + 2);
 
         this.reg.PC = this.reg[regA];
     }
@@ -248,14 +294,17 @@ class CPU {
      * RET
      */
     RET() {
-
+        this.reg.PC = this.ram.read(this.reg[7]);
+        this.reg[7]++;
     }
 
     /**
      * JMP
      */
     JMP() {
-
+        const regA = this.ram.read(this.reg.PC + 1);
+        
+        this.reg.PC = this.reg[regA];
     }
 }
 
